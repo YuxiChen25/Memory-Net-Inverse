@@ -19,9 +19,14 @@ def train(model: nn.Module, loader: torch.utils.data.DataLoader, optimizer: torc
         The device to perform computations on.
     display : bool
         Whether to display the current test loss, default: False. 
+
+    Returns
+    -------
+    float
+        The average loss per sample over the training data.
     """
     model.train()
-    
+
     train_loss = 0.0
     train_data = 0
 
@@ -40,9 +45,13 @@ def train(model: nn.Module, loader: torch.utils.data.DataLoader, optimizer: torc
         train_loss += loss.item() * features.size(0)
         train_data += features.size(0)
 
+    average_loss = train_loss / train_data
+
     if display:
 
-        print(f'Average loss per sample: {train_loss / train_data}')
+        print(f'Average training loss: {average_loss}')
+
+    return average_loss
 
 def test(model: nn.Module, loader: torch.utils.data.DataLoader, device: torch.device, display: bool = False) -> float:
     """
@@ -85,6 +94,6 @@ def test(model: nn.Module, loader: torch.utils.data.DataLoader, device: torch.de
 
     if display:
 
-        print(f'Average test/validation loss per sample: {average_loss}')
+        print(f'Average test loss: {average_loss}')
 
     return average_loss

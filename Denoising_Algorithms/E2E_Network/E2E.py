@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 import numpy as np
+
+from copy import deepcopy
 from typing import List, Tuple, Union
 
 class Block(nn.Module):
@@ -17,7 +19,7 @@ class Block(nn.Module):
         The sensing matrix used in the block.
     """
 
-    def __init__(self, A: np.ndarray, mu: float, depth: int):
+    def __init__(self, A: torch.tensor, mu: float, model: nn.Sequential):
         """
         Initializes the Block with the given parameters.
 
@@ -27,30 +29,16 @@ class Block(nn.Module):
             The sensing matrix.
         mu : float
             The step size for the gradient step.
-        depth : int
-            Number of convolutional layers in the block.
+        model : nn.Sequential
+            A sequential container of custom layers
         """
         super().__init__()
 
-        # Define the convolutional network as a sequence of layers using a list comprehension
-        self.model: nn.Sequential = nn.Sequential(
-            nn.Conv2d(in_channels=1, out_channels=64, kernel_size=3, padding=1, bias=True),
-            nn.ReLU(),
-            *[
-                nn.Sequential(
-                    nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=1, bias=False),
-                    nn.BatchNorm2d(num_features=64, eps=0.0001, momentum=0.95),
-                    nn.ReLU()
-                )
-                for _ in range(depth)
-            ],
-            nn.Conv2d(in_channels=64, out_channels=1, kernel_size=3, padding=1, bias=False),
-            nn.Flatten()
-        )
-        self.mu_step: nn.Parameter = nn.Parameter(torch.Tensor([mu]))  # Step size as a learnable parameter
-        self.matrix: torch.Tensor = torch.from_numpy(A).float()   
+        self.model: nn.Sequential = model
+        self.mu_step: nn.Parameter = nn.Parameter(torch.Tensor([mu]))  # Learnable step size  
+        self.matrix: torch.Tensor = A
 
-    def forward(self, y: torch.Tensor, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, y: torch.Tensor, x: torch.Tensor, residual: bool) -> torch.Tensor:
         """
         Forward pass through the block.
 
@@ -60,14 +48,14 @@ class Block(nn.Module):
             The input tensor, typically the observed data.
         x : torch.Tensor
             The initial tensor to be updated in this block.
+        residual : bool
+            Whether the projection step predicts the image or the residual
 
         Returns
         -------
         torch.Tensor
             The output tensor after processing through the block.
         """
-        self.matrix = self.matrix.to(x.device)
-
         d: int = y.size(0)
         m: int = int(np.sqrt(x.size(1)))
 
@@ -76,6 +64,9 @@ class Block(nn.Module):
         x_tilde: torch.Tensor = x + self.mu_step * (self.matrix.t() @ residual.t()).t()
         x_tilde = torch.reshape(x_tilde, (d, 1, m, m))  # Reshape x_tilde for the convolutional layers
 
+        if residual: 
+            return torch.reshape(x_tilde, (d, m * m)) + self.model(x_tilde)
+        
         return self.model(x_tilde)
     
 class EndToEnd(nn.Module):
@@ -89,13 +80,17 @@ class EndToEnd(nn.Module):
         The sensing matrix used in the model.
     numProjections : int
         Number of projections (layers) in the network.
-    net : torch.nn.ModuleList
-        List containing all the Block layers.
     mu : List[float]
         List of step sizes for gradient descent steps in each projection.
+    device : torch.device
+        The device on which to perform computations (CPU or GPU).
+    residual : bool
+        Whether the projection step predicts the image or the residual 
+    net : torch.nn.ModuleList
+        List containing all the Block layers.
     """
 
-    def __init__(self, A: np.ndarray, mu: List[float], numProjections: int, depth: int, device: torch.device):
+    def __init__(self, A: np.ndarray, mu: List[float], numProjections: int, model: nn.Sequential, device: torch.device, residual: bool = False):
         """
         Initializes the EndToEnd model with the given parameters.
 
@@ -107,23 +102,26 @@ class EndToEnd(nn.Module):
             A list of step sizes for each projection.
         numProjections : int
             Number of projections in the network.
-        depth : int
-            Number of convolutional layers within each Block.
+        model : nn.Sequential
+            A sequential container of custom layers
         device : torch.device
             The device on which to perform computations (CPU or GPU).
+        residual : bool
+            Whether the projection step predicts the image or the residual, default : False
         """
         super().__init__()
 
-        self.matrix: torch.Tensor = torch.from_numpy(A).float()
+        self.matrix: torch.Tensor = torch.from_numpy(A).float().to(device)
         self.numProjections: int = numProjections
         self.mu: List[float] = mu
         self.device = device
+        self.residual = residual
 
         if len(mu) != numProjections:
             raise ValueError("Length of mu must be equal to numProjections")
 
         self.net: nn.ModuleList = nn.ModuleList([
-            Block(A, mu[i], depth) for i in range(numProjections)
+            Block(self.matrix, mu[i], deepcopy(model)) for i in range(numProjections)
         ])
 
     def forward(self, y: torch.Tensor) -> Tuple[torch.Tensor, List[torch.Tensor]]:
@@ -149,7 +147,7 @@ class EndToEnd(nn.Module):
 
         # Process input iteratively through each projection/block
         for block in self.net:
-            x_t = block(y, x_t)
+            x_t = block(y, x_t, self.residual)
             history.append(x_t)  
 
         return history

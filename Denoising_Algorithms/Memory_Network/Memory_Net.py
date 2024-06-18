@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 import numpy as np
+
+from copy import deepcopy
 from typing import List, Tuple, Union, Optional
 
 def init_weights(mu: float, size: int) -> torch.Tensor:
@@ -35,41 +37,30 @@ class Block(nn.Module):
         A sequential container of convolutional and activation layers.
     matrix : torch.Tensor
         The sensing matrix used for transformation.
+    device : torch.device
+        The device on which to perform computations (CPU or GPU).
     """
 
-    def __init__(self, A: np.ndarray, depth: int, device: torch.device):
+    def __init__(self, A: torch.tensor, model: nn.Sequential, device: torch.device):
         """
         Initializes the Block with the given parameters.
 
         Parameters
         ----------
-        A : np.ndarray
+        A : torch.tensor
             The sensing matrix.
-        depth : int
-            Number of convolutional layers in the block.
+        model : nn.Sequential
+            A sequential container of custom layers
         device : torch.device
             The device on which to perform computations (CPU or GPU).
         """
         super().__init__()
 
-        self.model: nn.Sequential = nn.Sequential(
-            nn.Conv2d(in_channels=1, out_channels=64, kernel_size=3, padding=1, bias=True),
-            nn.ReLU(),
-            *[
-                nn.Sequential(
-                    nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=1, bias=False),
-                    nn.BatchNorm2d(num_features=64, eps=0.0001, momentum=0.95),
-                    nn.ReLU()
-                )
-                for _ in range(depth)
-            ],
-            nn.Conv2d(in_channels=64, out_channels=1, kernel_size=3, padding=1, bias=False),
-            nn.Flatten()
-        )
-        self.matrix: torch.Tensor = torch.from_numpy(A).float().to(device)   
+        self.model: nn.Sequential = model
+        self.matrix: torch.Tensor = A
         self.device = device
 
-    def forward(self, y: torch.Tensor, x: torch.Tensor, memory: Optional[torch.Tensor] = None) -> Tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, y: torch.Tensor, x: torch.Tensor, memory: Optional[torch.Tensor], residual: bool) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Forward pass through the block.
 
@@ -81,6 +72,8 @@ class Block(nn.Module):
             The initial tensor to be updated in this block.
         memory : Optional[torch.Tensor]
             Memory tensor to store intermediate results across layers.
+        residual : bool
+            Whether the projection step predicts the image or the residual.
 
         Returns
         -------
@@ -101,7 +94,10 @@ class Block(nn.Module):
             c = 2
 
         # Projection Step
-        x_new = torch.reshape(x, (d, h * w)) + self.model(x)
+        if residual: 
+            x_new = torch.reshape(x, (d, h * w)) + self.model(x)
+        else: 
+            x_new = self.model(x)
 
         # Retrieve the newest gradient
         residual = y - (self.matrix @ x_new.t()).t()
@@ -133,9 +129,11 @@ class MemoryNetwork(nn.Module):
         List containing all the Block layers and convolutional layers for projections.
     device : torch.device
         The device on which to perform computations (CPU or GPU).
+    residual : bool
+        Whether the projection step predicts the image or the residual
     """
 
-    def __init__(self, A: np.ndarray, mu: List[float], numProjections: int, depth: int, device: torch.device):
+    def __init__(self, A: np.ndarray, mu: List[float], numProjections: int, model: nn.Sequential, device: torch.device, residual: bool = False):
         """
         Initializes the EndToEnd model with the given parameters.
 
@@ -147,10 +145,12 @@ class MemoryNetwork(nn.Module):
             A list of step sizes for each projection step.
         numProjections : int
             Number of projections (layers) in the network.
-        depth : int
-            Number of convolutional layers within each Block.
+        model : nn.Sequential
+            A sequential container of custom layers
         device : torch.device
             The device on which to perform computations (CPU or GPU).
+        residual : bool
+            Whether the projection step predicts the image or the residual, default : False
         """
         super().__init__()
 
@@ -160,10 +160,11 @@ class MemoryNetwork(nn.Module):
         self.matrix: torch.Tensor = torch.from_numpy(A).float().to(device)
         self.device = device
         self.net: nn.ModuleList = nn.ModuleList([])
+        self.residual = residual
 
         for i in range(numProjections):
 
-            block = Block(A, depth, device)  
+            block = Block(self.matrix, deepcopy(model), device)  
             self.net.append(block)
 
             if i != numProjections - 1:
@@ -206,7 +207,7 @@ class MemoryNetwork(nn.Module):
         for i in range(self.numProjections * 2 - 1):
             if i % 2 == 0:
                 # Process through Block layers and update memory
-                x_t, memory = self.net[i](y, x_t, memory)
+                x_t, memory = self.net[i](y, x_t, memory, self.residual)
                 history.append(x_t.reshape(d, int(m ** 2)))
             else:
                 # Process through convolutional layers
