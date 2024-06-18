@@ -115,9 +115,9 @@ class Block(nn.Module):
 
         return torch.reshape(x_new, (d, 1, h, w)), new_memory
 
-class EndToEnd(nn.Module):
+class MemoryNetwork(nn.Module):
     """
-    End-to-End network model for projected gradient descent, processing input through multiple projections.
+    MemoryNetwork network model for projected gradient descent, processing input through multiple projections.
 
     Attributes
     ----------
@@ -180,7 +180,7 @@ class EndToEnd(nn.Module):
 
                 self.net.append(convolution)
 
-    def forward(self, y: torch.Tensor) -> Union[torch.Tensor, Tuple[torch.Tensor, List[torch.Tensor]]]:
+    def forward(self, y: torch.Tensor) -> List[torch.Tensor]:
         """
         Forward pass through the network.
 
@@ -188,36 +188,31 @@ class EndToEnd(nn.Module):
         ----------
         y : torch.Tensor
             The input tensor, typically the observed data.
-        calculate_intermediate : bool, optional
-            If True, returns intermediate projections for each layer.
 
         Returns
         -------
-        Union[torch.Tensor, Tuple[torch.Tensor, List[torch.Tensor]]]
-            The final output tensor and optionally the list of intermediate outputs if calculate_intermediate is True.
+        List[torch.Tensor]
+            The list of intermediate projections through the network layers.
         """
         d: int = y.size(0)
         m: int = int(np.sqrt(self.matrix.size(1)))
 
-        # First step size
+        # Initial projection step
         x_t: torch.Tensor = self.mu_init * torch.reshape((self.matrix.t() @ y.t()).t(), (d, 1, m, m))
         history: List[torch.Tensor] = []
 
         memory: Optional[torch.Tensor] = None
 
         for i in range(self.numProjections * 2 - 1):
-
             if i % 2 == 0:
-                # Process through blocks with updated memory
+                # Process through Block layers and update memory
                 x_t, memory = self.net[i](y, x_t, memory)
                 history.append(x_t.reshape(d, int(m ** 2)))
             else:
-                # Process through 'gradient' convolution layers
+                # Process through convolutional layers
                 x_t = self.net[i](memory)
 
-        x_hat: torch.Tensor = x_t.reshape(d, int(m ** 2))
-
-        return x_hat, history
+        return history
 
     def predict(self, features: np.ndarray, calculate_intermediate: bool = False) -> Union[np.ndarray, List[np.ndarray]]:
         """
@@ -242,11 +237,13 @@ class EndToEnd(nn.Module):
             (1, features.shape[0])
         ).to(self.device)
 
+        with torch.no_grad():   
+            tensor_hist: List[torch.Tensor] = self.forward(features_tensor)
+
         if calculate_intermediate:
-
-            tensor_hist: List[torch.Tensor] = self.forward(features_tensor, calculate_intermediate)[1]
+            # Optionally, return all intermediate image reconstructions
             images_hist: List[np.ndarray] = [tensor.detach().cpu().numpy() for tensor in tensor_hist]
-
             return images_hist
 
-        return self.forward(features_tensor)[0].detach().cpu().numpy()
+        # Return the final image Reconstruction
+        return tensor_hist[-1].detach().cpu().numpy()
