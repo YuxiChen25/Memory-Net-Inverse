@@ -69,9 +69,9 @@ class Block(nn.Module):
         
         return self.model(x_tilde)
     
-class EndToEnd(nn.Module):
+class PGD(nn.Module):
     """
-    End-to-End network model that processes input through multiple layers of convolutional operations,
+    End-to-End PGD network model that processes input through multiple layers of convolutional operations,
     specifically tailored for projected gradient descent.
 
     Attributes
