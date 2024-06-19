@@ -25,7 +25,8 @@ class DnCNN(nn.Module):
             ])
         
         layers.append(
-            nn.Conv2d(in_channels=64, out_channels=1, kernel_size=3, padding=1, bias=False)
+            nn.Conv2d(in_channels=64, out_channels=1, kernel_size=3, padding=1, bias=False),
+            nn.Flatten()
         )
         
         self.model = nn.Sequential(*layers)
