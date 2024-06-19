@@ -41,7 +41,7 @@ class Block(nn.Module):
         The device on which to perform computations (CPU or GPU).
     """
 
-    def __init__(self, A: torch.tensor, model: nn.Sequential, device: torch.device):
+    def __init__(self, A: torch.tensor, model: nn.Module, device: torch.device):
         """
         Initializes the Block with the given parameters.
 
@@ -49,14 +49,14 @@ class Block(nn.Module):
         ----------
         A : torch.tensor
             The sensing matrix.
-        model : nn.Sequential
-            A sequential container of custom layers
+        model : nn.Module
+            The deep learning projector model
         device : torch.device
             The device on which to perform computations (CPU or GPU).
         """
         super().__init__()
 
-        self.model: nn.Sequential = model
+        self.model: nn.Module = model
         self.matrix: torch.Tensor = A
         self.device = device
 
@@ -133,7 +133,7 @@ class MemoryNetwork(nn.Module):
         Whether the projection step predicts the image or the residual
     """
 
-    def __init__(self, A: np.ndarray, mu: List[float], numProjections: int, model: nn.Sequential, device: torch.device, residual: bool = False):
+    def __init__(self, A: np.ndarray, mu: List[float], numProjections: int, model: nn.Module, device: torch.device, residual: bool = False):
         """
         Initializes the EndToEnd model with the given parameters.
 
@@ -145,8 +145,8 @@ class MemoryNetwork(nn.Module):
             A list of step sizes for each projection step.
         numProjections : int
             Number of projections (layers) in the network.
-        model : nn.Sequential
-            A sequential container of custom layers
+        model : nn.Module
+            The deep learning projector model
         device : torch.device
             The device on which to perform computations (CPU or GPU).
         residual : bool

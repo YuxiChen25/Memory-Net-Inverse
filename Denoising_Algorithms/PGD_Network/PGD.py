@@ -19,7 +19,7 @@ class Block(nn.Module):
         The sensing matrix used in the block.
     """
 
-    def __init__(self, A: torch.tensor, mu: float, model: nn.Sequential):
+    def __init__(self, A: torch.tensor, mu: float, model: nn.Module):
         """
         Initializes the Block with the given parameters.
 
@@ -29,12 +29,12 @@ class Block(nn.Module):
             The sensing matrix.
         mu : float
             The step size for the gradient step.
-        model : nn.Sequential
-            A sequential container of custom layers
+        model : nn.Module
+            The deep learning projector model
         """
         super().__init__()
 
-        self.model: nn.Sequential = model
+        self.model: nn.Module = model
         self.mu_step: nn.Parameter = nn.Parameter(torch.Tensor([mu]))  # Learnable step size  
         self.matrix: torch.Tensor = A
 
@@ -90,7 +90,7 @@ class PGD(nn.Module):
         List containing all the Block layers.
     """
 
-    def __init__(self, A: np.ndarray, mu: List[float], numProjections: int, model: nn.Sequential, device: torch.device, residual: bool = False):
+    def __init__(self, A: np.ndarray, mu: List[float], numProjections: int, model: nn.Module, device: torch.device, residual: bool = False):
         """
         Initializes the EndToEnd model with the given parameters.
 
@@ -102,8 +102,8 @@ class PGD(nn.Module):
             A list of step sizes for each projection.
         numProjections : int
             Number of projections in the network.
-        model : nn.Sequential
-            A sequential container of custom layers
+        model : nn.Module
+            The deep learning projector model.
         device : torch.device
             The device on which to perform computations (CPU or GPU).
         residual : bool
