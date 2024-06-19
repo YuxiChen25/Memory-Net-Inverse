@@ -1,18 +1,15 @@
-import os
 import time
 import torch
 import numpy as np
 import torch.nn as nn
 
-os.path.append('../')
-
 from typing import List, Tuple
 from torch.utils.data import random_split, DataLoader
 
-from PGD_Network.PGD import PGD
-from ImageDataset import ImageDataset
-from loss_functions import BaseLoss, LastLayerLoss
-from Memory_Network.Memory_Net import MemoryNetwork
+from Denoising_Algorithms.PGD_Network.PGD import PGD
+from Denoising_Algorithms.DL_Training.ImageDataset import ImageDataset
+from Denoising_Algorithms.DL_Training.loss_functions import BaseLoss, LastLayerLoss
+from Denoising_Algorithms.Memory_Network.Memory_Net import MemoryNetwork
 
 def train(model: nn.Module, loader: torch.utils.data.DataLoader, optimizer: torch.optim.Optimizer, loss_function: BaseLoss, device: torch.device, display: bool = False) -> float:
     """
