@@ -176,7 +176,8 @@ class PGD(nn.Module):
             (1, features.shape[0])
         ).to(self.device)
 
-        tensor_hist: List[torch.Tensor] = self.forward(features_tensor)
+        with torch.no_grad:
+            tensor_hist: List[torch.Tensor] = self.forward(features_tensor)
 
         if calculate_intermediate:
             # Optionally, return all intermediate image reconstructions
