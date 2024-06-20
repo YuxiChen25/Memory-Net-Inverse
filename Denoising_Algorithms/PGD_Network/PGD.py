@@ -38,7 +38,7 @@ class Block(nn.Module):
         self.mu_step: nn.Parameter = nn.Parameter(torch.Tensor([mu]))  # Learnable step size  
         self.matrix: torch.Tensor = A
 
-    def forward(self, y: torch.Tensor, x: torch.Tensor, residual: bool) -> torch.Tensor:
+    def forward(self, y: torch.Tensor, x: torch.Tensor, residual_connection: bool) -> torch.Tensor:
         """
         Forward pass through the block.
 
@@ -48,7 +48,7 @@ class Block(nn.Module):
             The input tensor, typically the observed data.
         x : torch.Tensor
             The initial tensor to be updated in this block.
-        residual : bool
+        residual_connection : bool
             Whether the projection step predicts the image or the residual
 
         Returns
@@ -64,7 +64,7 @@ class Block(nn.Module):
         x_tilde: torch.Tensor = x + self.mu_step * (self.matrix.t() @ residual.t()).t()
         x_tilde = torch.reshape(x_tilde, (d, 1, m, m))  # Reshape x_tilde for the convolutional layers
 
-        if residual: 
+        if residual_connection: 
             return torch.reshape(x_tilde, (d, m * m)) + self.model(x_tilde)
         
         return self.model(x_tilde)
