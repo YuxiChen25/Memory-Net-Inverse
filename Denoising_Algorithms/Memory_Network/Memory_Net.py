@@ -60,7 +60,7 @@ class Block(nn.Module):
         self.matrix: torch.Tensor = A
         self.device = device
 
-    def forward(self, y: torch.Tensor, x: torch.Tensor, memory: Optional[torch.Tensor], residual: bool) -> Tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, y: torch.Tensor, x: torch.Tensor, memory: Optional[torch.Tensor], residual_connection: bool) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Forward pass through the block.
 
@@ -72,7 +72,7 @@ class Block(nn.Module):
             The initial tensor to be updated in this block.
         memory : Optional[torch.Tensor]
             Memory tensor to store intermediate results across layers.
-        residual : bool
+        residual_connection : bool
             Whether the projection step predicts the image or the residual.
 
         Returns
@@ -94,7 +94,7 @@ class Block(nn.Module):
             c = 2
 
         # Projection Step
-        if residual: 
+        if residual_connection: 
             x_new = torch.reshape(x, (d, h * w)) + self.model(x)
         else: 
             x_new = self.model(x)
