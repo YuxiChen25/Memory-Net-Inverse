@@ -111,7 +111,7 @@ def test(model: nn.Module, loader: torch.utils.data.DataLoader, device: torch.de
 
 def train_main(A: np.ndarray, mu: List[float], 
                train_data: np.ndarray, 
-               model: nn.Sequential, 
+               model: nn.Module, 
                device: torch.device, 
                model_type: str = 'PGD', 
                split: float = 0.2, 
@@ -133,7 +133,7 @@ def train_main(A: np.ndarray, mu: List[float],
         A list of step sizes for each projection step.
     train_data : np.ndarray
         The training data.
-    model : nn.Sequential
+    model : nn.Module
         The convolutional model to be used within each Block.
     device : torch.device
         The device on which to perform computations (CPU or GPU).
