@@ -1,2 +1,5 @@
-Auxiliary_Functions/ILSVRC2012.pkl
+Auxiliary_Functions/ILSVRC2012_32x32.pkl
+Auxiliary_Functions/ILSVRC2012_50x50.pkl
+Auxiliary_Functions/ILSVRC2012_64x64.pkl
+Results/plots.ipynb
 .DS_Store
