@@ -188,8 +188,10 @@ def train_main(A: np.ndarray, mu: List[float],
         chosen_model = PGD(A, mu, numProjections=numProjections, model=model, device=device, residual=residual).to(device)
     elif model_type == 'Memory':
         chosen_model = MemoryNetwork(A, mu, numProjections=numProjections, model=model, device=device, residual=residual).to(device)
+    elif model_type == 'Adaptive':
+        chosen_model = AdaptiveNetwork(A, mu, numProjections=numProjections, model=model, device=device, residual=residual).to(device)
     else:
-        raise ValueError("Invalid model_type. Choose 'PGD' for Projected Gradient Descent or 'Memory' for MemoryNetwork.")
+        raise ValueError("Invalid model_type. Choose 'PGD' for Projected Gradient Descent or 'Memory' or 'Adaptive.'")
 
     # Adam Optimizer
     learning_rate = 1e-4
@@ -227,3 +229,4 @@ def train_main(A: np.ndarray, mu: List[float],
     }
 
     return best_model_path, loss_history
+
