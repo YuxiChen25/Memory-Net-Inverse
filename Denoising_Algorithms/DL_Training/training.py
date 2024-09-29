@@ -199,7 +199,7 @@ def train_main(A: np.ndarray, mu: List[float],
     elif model_type == 'Nesterov':
         chosen_model = Nesterov(A, mu, numProjections=numProjections, model=model, device=device, residual=residual).to(device)
     elif model_type == 'DAMP':
-        chosen_model = DAMP(A, eps=0.03, numProjections=numProjections, model=model, device=device, residual=residual).to(device)
+        chosen_model = DAMP(A, eps=0.2, numProjections=numProjections, model=model, device=device, residual=residual).to(device)
     else:
         raise ValueError("Invalid model_type. Choose among 'PGD', 'Memory', 'Nesterov' or 'DAMP'.")
 
