@@ -10,7 +10,7 @@ class Block(nn.Module):
     A Block within the Unrolled D-AMP model.
     """
 
-    def __init__(self, A: torch.Tensor, mu: float, eps: float, model: nn.Module):
+    def __init__(self, A: torch.Tensor, eps: float, model: nn.Module):
         """
         Initializes the Block with the given parameters.
 
@@ -29,7 +29,6 @@ class Block(nn.Module):
 
         self.model: nn.Module = model
         self.matrix: torch.Tensor = A
-        self.mu_step: nn.Parameter = nn.Parameter(torch.Tensor([mu]))  # Learnable step size  
         self.eps: float = eps
 
     def forward(self, y: torch.Tensor, x: torch.Tensor, z: torch.Tensor, residual_connection: bool) -> Tuple[torch.Tensor, torch.Tensor]:
@@ -59,7 +58,7 @@ class Block(nn.Module):
         n: int = self.matrix.size(1)
         n_sqrt: int = int(np.sqrt(n))  
 
-        x_temp: torch.Tensor = x + self.mu_step * (self.matrix.t() @ z.t()).t()  
+        x_temp: torch.Tensor = x + (self.matrix.t() @ z.t()).t()  
         x_rshp: torch.Tensor = x_temp.view(d, 1, n_sqrt, n_sqrt)
 
         if residual_connection:
@@ -89,7 +88,7 @@ class DAMP(nn.Module):
     Unrolled D-AMP network model.
     """
 
-    def __init__(self, A: np.ndarray, mu: List[float], eps: float, numProjections: int, model: nn.Module, device: torch.device, residual: bool = False):
+    def __init__(self, A: np.ndarray, eps: float, numProjections: int, model: nn.Module, device: torch.device, residual: bool = False):
         """
         Initializes the DAMP model with the given parameters.
 
@@ -97,8 +96,6 @@ class DAMP(nn.Module):
         ----------
         A : np.ndarray
             The sensing matrix.
-        mu : List[float]
-            A list of step sizes for each projection.
         eps : float
             The small perturbation used in the divergence estimation.
         numProjections : int
@@ -115,15 +112,11 @@ class DAMP(nn.Module):
         self.matrix: torch.Tensor = torch.from_numpy(A).float().to(device)
         self.numProjections: int = numProjections
         self.eps: float = eps
-        self.mu: List[float] = mu
         self.device = device
         self.residual = residual
 
-        if len(mu) != numProjections:
-            raise ValueError("Length of mu must be equal to numProjections")
-
         self.net: nn.ModuleList = nn.ModuleList([
-            Block(self.matrix, mu[i], self.eps, deepcopy(model)) for i in range(numProjections)
+            Block(self.matrix, self.eps, deepcopy(model)) for i in range(numProjections)
         ])
 
     def forward(self, y: torch.Tensor) -> List[torch.Tensor]:
