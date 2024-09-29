@@ -7,10 +7,13 @@ import torch.nn as nn
 from typing import List, Tuple
 from torch.utils.data import random_split, DataLoader
 
-from Denoising_Algorithms.PGD_Network.PGD import PGD
 from Denoising_Algorithms.DL_Training.ImageDataset import ImageDataset
 from Denoising_Algorithms.DL_Training.loss_functions import BaseLoss, LastLayerLoss
+
+from Denoising_Algorithms.PGD_Network.PGD import PGD
+from Denoising_Algorithms.Nesterov_Network.Nesterov import Nesterov
 from Denoising_Algorithms.Memory_Network.Memory_Net import MemoryNetwork
+
 
 def train(model: nn.Module, loader: torch.utils.data.DataLoader, optimizer: torch.optim.Optimizer, loss_function: BaseLoss, device: torch.device, display: bool = False) -> float:
     """
@@ -138,7 +141,12 @@ def train_main(A: np.ndarray, mu: List[float],
     device : torch.device
         The device on which to perform computations (CPU or GPU).
     model_type : str, optional
-        The type of model to train ('PGD' for Projected Gradient Descent or 'Memory' for MemoryNetwork), default: 'PGD'.
+        The type of model to train 
+            1) 'PGD': Projected Gradient Descent 
+            2) 'Memory': MemoryNetwork
+            3) 'Nesterov': Nesterov's Accelerated First Order Method
+            4) 
+        Default: 'PGD'.
     split : float, optional
         Fraction of data to be used for validation, default: 0.2.
     numProjections : int, optional
@@ -188,10 +196,10 @@ def train_main(A: np.ndarray, mu: List[float],
         chosen_model = PGD(A, mu, numProjections=numProjections, model=model, device=device, residual=residual).to(device)
     elif model_type == 'Memory':
         chosen_model = MemoryNetwork(A, mu, numProjections=numProjections, model=model, device=device, residual=residual).to(device)
-    elif model_type == 'Adaptive':
-        chosen_model = AdaptiveNetwork(A, mu, numProjections=numProjections, model=model, device=device, residual=residual).to(device)
+    elif model_type == 'Nesterov':
+        chosen_model = Nesterov(A, mu, numProjections=numProjections, model=model, device=device, residual=residual).to(device)
     else:
-        raise ValueError("Invalid model_type. Choose 'PGD' for Projected Gradient Descent or 'Memory' or 'Adaptive.'")
+        raise ValueError("Invalid model_type. Choose 'PGD' for Projected Gradient Descent or 'Memory' or 'Nesterov.'")
 
     # Adam Optimizer
     learning_rate = 1e-4
