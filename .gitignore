@@ -10,6 +10,5 @@ Auxiliary_Functions/ILSVRC2012_100x100_small.pkl
 Auxiliary_Functions/sensing_matrices/64 x 64 images/
 Auxiliary_Functions/sensing_matrices/80 x 80 images/
 Results/plots.ipynb
-Results/Additive_Noise/
 Results/Residual_Connection/
 .DS_Store
