@@ -10,5 +10,15 @@ Auxiliary_Functions/ILSVRC2012_100x100_small.pkl
 Auxiliary_Functions/sensing_matrices/64 x 64 images/
 Auxiliary_Functions/sensing_matrices/80 x 80 images/
 Results/plots.ipynb
-Results/Residual_Connection/
+
+
+Results/Residual_Connection/DAMP_Residual
+Results/Residual_Connection/DAMP_Residual-LastLayer
+Results/Residual_Connection/Nesterov_Adaptive_No_Residual
+Results/Residual_Connection/Nesterov_Adaptive_No_Residual-LastLayer
+Results/Residual_Connection/Nesterov_Adaptive_Residual
+Results/Residual_Connection/Nesterov_Adaptive_Residual-LastLayer
+Results/Residual_Connection/Nesterov_Residual
+Results/Residual_Connection/Nesterov_Residual-LastLayer
+
 .DS_Store
