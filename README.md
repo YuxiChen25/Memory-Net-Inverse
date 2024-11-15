@@ -2,7 +2,7 @@
 
 ### Long Memory Unrolled Networks for Linear Inverse Problems
 
-This repository includes the accompanying code for the paper 'Comprehensive Examination of Unrolled Networks for Solving Linear Inverse Problems," including a novel generalized deep architecture for solving linear inverse problems called Long Memory Unrolled Networks, as well as a comprehensive ablation study on the impact of various hyperparameter choices and on robustness under various sampling conditions. Below are the details regarding the dataset, model architecture, results, and additional resources used.
+This repository includes the accompanying code for the paper "Comprehensive Examination of Unrolled Networks for Solving Linear Inverse Problems," including a novel generalized deep architecture for solving linear inverse problems called Long Memory Unrolled Networks, as well as a comprehensive ablation study on the impact of various hyperparameter choices and on robustness under various sampling conditions. Below are the details regarding the dataset, model architecture, results, and additional resources used.
 
 ---
 
