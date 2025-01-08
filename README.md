@@ -21,6 +21,6 @@ This repository includes the accompanying code for the paper "Comprehensive Exam
 
 ## 📊 Dataset
 
-We utilize a subset of the 2012 ImageNet Object Large Scale Visual Recognition Challenge (ILSVRC 2012) - Object Localization Challenge validation dataset, which contains 50,000 images. The code to generate our training dataset can be found in Auxiliary_Functions/image_preprocessing.ipynb, or can be made avialable upon request.
+We utilize a subset of the 2012 ImageNet Object Large Scale Visual Recognition Challenge (ILSVRC 2012) - Object Localization Challenge validation dataset, which contains 50,000 images. The code to generate our training dataset can be found in `Auxiliary_Functions/image_preprocessing.ipynb`, or can be made avialable upon request.
 
 🔗 **Dataset link**: [Kaggle - ILSVRC 2012 Validation Data](https://www.kaggle.com/c/imagenet-object-localization-challenge/data)
